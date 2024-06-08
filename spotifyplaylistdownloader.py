@@ -106,7 +106,7 @@ def spotifyMusicSearcher(link_passed):
         song_uri = match.groups()[0]
         song_Downloader(song_uri, session)
     else:
-        raise ValueError("Expected format: https://open.spotify.com/playlist/... or https://open.spotify.com/tracks/... or https://open.spotify.com/album/... ")
+        raise ValueError("Expected format: https://open.spotify.com/playlist/... or https://open.spotify.com/tracks/... ")
 
 def song_Downloader(song_uri, session):
     try:
