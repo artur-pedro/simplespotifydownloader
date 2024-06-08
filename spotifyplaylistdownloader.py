@@ -17,21 +17,44 @@ def load_any_dotenv():
     else:
         return False
 def clean_filename(filename):
-    cleaned_filename = re.sub(r'[<>:"/\\|?*]', '', filename)
+    cleaned_filename = re.sub(r'[<>:"/\\|?*?]', '', filename)
     return cleaned_filename
 
-def YoutubeAudioDownload(link, filename, index, format='mp4'):
-    if format not in ['mp3', 'mp4']:
-        raise ValueError("Invalid format. Choose either 'mp3' or 'mp4'.")
-    
-    ydl_opts = {
-        'extract_audio': True,
-        'format': 'bestaudio',
-        'outtmpl': f'{filename}.{format}',
-        'quiet': True,
-        'no_warnings': True
-    }
+def YoutubeAudioDownload(link, filename, index, format):
+    if format not in ['mp3', 'ma4','webm', 'mp4']:
+        raise ValueError("Invalid format. Choose either 'mp3', 'ma4', 'webm' or 'mp4'.")
 
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': f'{filename}.%(ext)s',
+        'quiet': True,
+        'no_warnings': True,
+    }
+    if(format == 'ma4'):
+        ydl_opts.update({
+            'format':'bestaudio[ext=m4a]/mp4',
+            'extract_audio': True,
+            'audio_format': 'mp4',
+            'audio_quality': '256K',
+        })
+    if format == 'mp3':
+        ydl_opts.update({
+            'extract_audio': True,
+            'audio_format': 'mp3',
+            'audio_quality': '256K',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '256',
+            }]
+        })
+    if(format == 'mp4'):
+        ydl_opts.update({
+            'format':'bestaudio[ext=mp4]/mp4',
+            'extract_audio': True,
+            'audio_format': 'mp4',
+            'audio_quality': '256K',
+        })
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         try:
             ydl.download([link])
@@ -40,7 +63,6 @@ def YoutubeAudioDownload(link, filename, index, format='mp4'):
         except Exception as e:
             print(f"Failed to download {filename}: {str(e)}")
             return False
-
 def youtubeSearcher(artist_name, song, index):
     search_word = f"{artist_name} - {song}"
     url = "https://www.youtube.com/results?search_query=" + quote(search_word)
@@ -50,12 +72,18 @@ def youtubeSearcher(artist_name, song, index):
     filename = f"{f'{artist_name} - {song}'}"
     filename = clean_filename(filename)
     print(f"Downloading {filename}")
-    if YoutubeAudioDownload(music_link, filename, index, format=sys.argv[2]) == True:
-        return True
-    else:
-        print(f"Failed to download {filename}")
-        return False
-
+    if (len(sys.argv) == 3):
+        if YoutubeAudioDownload(music_link, filename, index, format=sys.argv[2]) == True:
+            return True
+        else:
+            print(f"Failed to download {filename}")
+            return False
+    if (len(sys.argv) == 2):
+        if YoutubeAudioDownload(music_link, filename, index, format="webm") == True:
+            return True
+        else:
+            print(f"Failed to download {filename}")
+            return False
 def spotifyMusicSearcher(link_passed):
     if load_any_dotenv() == True or load_dotenv() == True:
         pass
@@ -78,7 +106,7 @@ def spotifyMusicSearcher(link_passed):
         song_uri = match.groups()[0]
         song_Downloader(song_uri, session)
     else:
-        raise ValueError("Expected format: https://open.spotify.com/playlist/... or https://open.spotify.com/tracks/... ")
+        raise ValueError("Expected format: https://open.spotify.com/playlist/... or https://open.spotify.com/tracks/... or https://open.spotify.com/album/... ")
 
 def song_Downloader(song_uri, session):
     try:
@@ -86,10 +114,11 @@ def song_Downloader(song_uri, session):
     except Exception as e:
         os.remove(".env")
     track_name = track["name"]
+    track_name2 = track_name
+    track_name = clean_filename(track_name2)
     directory = os.path.join(os.getcwd(), track_name)
     os.makedirs(directory, exist_ok=True)
     DOWNLOADED_NAME = "downloaded.txt"
-    track_name = track["name"]
     track_artists = track["artists"]
     track_artist = ""
     for index, artist in enumerate(track_artists):
@@ -124,8 +153,9 @@ def playlistDownloader(playlist_uri, session):
                 downloaded_file.write(f"{artist_name} - {song}\n")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 3 and len(sys.argv) != 2:
         print("Usage: python spotifyplaylistdownloader.py <spotify playlist> <format>")
+        print("or: python spotifyplaylistdownloader.py <spotify playlist> format will be 'webp' ")
         sys.exit(1)
     playlist_link = sys.argv[1]
     spotifyMusicSearcher(playlist_link)
