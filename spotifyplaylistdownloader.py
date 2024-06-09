@@ -155,7 +155,7 @@ def playlistDownloader(playlist_uri, session):
 if __name__ == "__main__":
     if len(sys.argv) != 3 and len(sys.argv) != 2:
         print("Usage: python spotifyplaylistdownloader.py <spotify playlist> <format>")
-        print("or: python spotifyplaylistdownloader.py <spotify playlist> format will be 'webp' ")
+        print("or: python spotifyplaylistdownloader.py <spotify playlist> format will be 'webm' ")
         sys.exit(1)
     playlist_link = sys.argv[1]
     spotifyMusicSearcher(playlist_link)
